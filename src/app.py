@@ -77,6 +77,26 @@ activities = {
     }
 }
 
+# In-memory student database
+students = {
+    "michael@mergington.edu": {"name": "Michael", "grade": 10},
+    "daniel@mergington.edu": {"name": "Daniel", "grade": 11},
+    "emma@mergington.edu": {"name": "Emma", "grade": 11},
+    "sophia@mergington.edu": {"name": "Sophia", "grade": 12},
+    "john@mergington.edu": {"name": "John", "grade": 9},
+    "olivia@mergington.edu": {"name": "Olivia", "grade": 10},
+    "liam@mergington.edu": {"name": "Liam", "grade": 12},
+    "noah@mergington.edu": {"name": "Noah", "grade": 11},
+    "ava@mergington.edu": {"name": "Ava", "grade": 10},
+    "mia@mergington.edu": {"name": "Mia", "grade": 9},
+    "amelia@mergington.edu": {"name": "Amelia", "grade": 11},
+    "harper@mergington.edu": {"name": "Harper", "grade": 10},
+    "ella@mergington.edu": {"name": "Ella", "grade": 12},
+    "scarlett@mergington.edu": {"name": "Scarlett", "grade": 11},
+    "james@mergington.edu": {"name": "James", "grade": 10},
+    "benjamin@mergington.edu": {"name": "Benjamin", "grade": 12}
+}
+
 
 @app.get("/")
 def root():
@@ -88,6 +108,45 @@ def get_activities():
     return activities
 
 
+@app.get("/students")
+def get_students():
+    return students
+
+
+@app.get("/students/{email}")
+def get_student(email: str):
+    if email not in students:
+        raise HTTPException(status_code=404, detail="Student not found")
+    return students[email]
+
+
+@app.post("/students")
+def add_student(email: str, name: str, grade: int):
+    if email in students:
+        raise HTTPException(status_code=400, detail="Student already exists")
+    students[email] = {"name": name, "grade": grade}
+    return {"message": f"Student {name} added", "student": students[email]}
+
+
+@app.put("/students/{email}")
+def update_student(email: str, name: str = None, grade: int = None):
+    if email not in students:
+        raise HTTPException(status_code=404, detail="Student not found")
+    if name is not None:
+        students[email]["name"] = name
+    if grade is not None:
+        students[email]["grade"] = grade
+    return {"message": f"Student {email} updated", "student": students[email]}
+
+
+@app.delete("/students/{email}")
+def delete_student(email: str):
+    if email not in students:
+        raise HTTPException(status_code=404, detail="Student not found")
+    del students[email]
+    return {"message": f"Student {email} removed"}
+
+
 @app.post("/activities/{activity_name}/signup")
 def signup_for_activity(activity_name: str, email: str):
     """Sign up a student for an activity"""
@@ -97,6 +156,10 @@ def signup_for_activity(activity_name: str, email: str):
 
     # Get the specific activity
     activity = activities[activity_name]
+
+    # Validate student exists
+    if email not in students:
+        raise HTTPException(status_code=404, detail="Student not found")
 
     # Validate student is not already signed up
     if email in activity["participants"]:
